@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import time
 
@@ -5,6 +6,7 @@ import nfc
 import requests
 
 # 学生証のサービスコード
+
 service_code = 0x120B
 
 
@@ -23,6 +25,18 @@ class LINENotifyBot:
             headers=self.__headers,
             data=payload,
         )
+
+
+@dataclasses.dataclass
+class Student:
+    id: str
+    name: str
+
+
+@dataclasses.dataclass
+class AccessData:
+    student: Student
+    datetime: datetime
 
 
 # 学生番号の読み取り
