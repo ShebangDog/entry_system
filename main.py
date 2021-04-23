@@ -1,12 +1,13 @@
-import dataclasses
 import datetime
+import sqlite3
 import time
 
 import nfc
 import requests
 
-# 学生証のサービスコード
+from EntryLocalDatabase import EntryLocalDatabase, Entry, Student, AccessData
 
+# 学生証のサービスコード
 service_code = 0x120B
 
 
@@ -27,18 +28,6 @@ class LINENotifyBot:
         )
 
 
-@dataclasses.dataclass
-class Student:
-    id: str
-    name: str
-
-
-@dataclasses.dataclass
-class AccessData:
-    student: Student
-    datetime: datetime
-
-
 # 学生番号の読み取り
 def on_connect_nfc(tag):
     if isinstance(tag, nfc.tag.tt3.Type3Tag):
@@ -56,19 +45,29 @@ def on_connect_nfc(tag):
 
 
 def main():
-    students = []
+    local_database = EntryLocalDatabase()
     clf = nfc.ContactlessFrontend('usb')
 
     while True:
         dt_now = datetime.datetime.now()
         clf.connect(rdwr={'on-connect': on_connect_nfc})
+        student = Student(student_id, "yamada")
+        access_data = AccessData(student, dt_now)
+        try:
+            local_database.registry(student, Entry.IsEntry)
+        except sqlite3.IntegrityError:
+            print(student.id, " is already registered")
 
-        if student_id in students:
+        local_database.save_log(access_data)
+        is_entry = local_database.get_is_entry(student)
+
+        if is_entry == Entry.IsEntry:
             info = "退室しました"
-            students.remove(student_id)
+            local_database.exit(access_data)
         else:
             info = "入室しました"
-            students.append(student_id)
+            local_database.entry(access_data)
+
         # XXXXの部分は取得したAPI keyを貼り付けてください
         bot = LINENotifyBot(access_token='XXXX')
         bot.send(message=student_id + info)

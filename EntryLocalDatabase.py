@@ -1,8 +1,7 @@
 import dataclasses
+import datetime as datetime
 import sqlite3
 from enum import Enum
-
-import datetime as datetime
 
 
 class Entry(Enum):
@@ -49,6 +48,12 @@ class EntryLocalDatabase:
         is_entry = self.access_table.get_is_entry(access_data.student)
         self.log_table.save_log(access_data, Entry.IsEntry if is_entry == Entry.IsExit else Entry.IsExit)
 
+    def get_students(self):
+        return self.member_table.get_students()
+
+    def get_is_entry(self, student):
+        return self.access_table.get_is_entry(student)
+
 
 class MemberTable:
     def __create_table(self):
@@ -73,6 +78,10 @@ class MemberTable:
                 .format(self.table_name, student.id, student.name)
         )
         self.conn.commit()
+
+    def get_students(self):
+        self.cur.execute('SELECT * FROM {0}'.format(self.table_name))
+        return self.cur.fetchall()
 
 
 class AccessTable:
@@ -147,11 +156,11 @@ class LogTable:
 
     def save_log(self, access_data, is_entry):
         self.cur.execute(
-            'INSERT INTO {0}(student_id, is_entry, datetime) VALUES("{1}", "{2}", {3})'.format(
+            'INSERT INTO {0}(student_id, is_entry, datetime) VALUES("{1}", "{2}", "{3}")'.format(
                 self.table_name,
                 access_data.student.id,
                 is_entry.value,
-                access_data.datetime.strftime('%Y%m%d')
+                access_data.datetime.strftime('%Y/%m/%d-%H:%M:%S')
             )
         )
         self.conn.commit()
