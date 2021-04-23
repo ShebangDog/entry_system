@@ -1,10 +1,25 @@
+import dataclasses
 import sqlite3
 from enum import Enum
+
+import datetime as datetime
 
 
 class Entry(Enum):
     IsExit = 0
     IsEntry = 1
+
+
+@dataclasses.dataclass
+class Student:
+    id: str
+    name: str
+
+
+@dataclasses.dataclass
+class AccessData:
+    student: Student
+    datetime: datetime
 
 
 class EntryLocalDatabase:
